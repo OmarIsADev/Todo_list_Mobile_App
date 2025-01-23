@@ -2,13 +2,10 @@ package com.omarisadev.todolist
 
 import android.os.Build
 import android.os.Bundle
-import android.text.Layout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,23 +16,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,14 +45,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.omarisadev.todolist.ui.theme.TodoListTheme
+import kotlinx.serialization.Serializable
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -63,13 +66,63 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TodoListTheme {
-                Scaffold(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) { innerPadding ->
-                    TodoListApp(
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val navController = rememberNavController()
+                var todo by remember { mutableStateOf("") }
+                var tasks by remember { mutableStateOf(listOf<Task>()) }
+
+                NavHost(
+                    navController = navController,
+                    startDestination = Home
+                ) {
+
+                    composable<Home> {
+                        Scaffold(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            topBar = {
+                                TopBar(
+                                    title = "Tasks"
+                                )
+                            },
+                            bottomBar = {
+                                FloatingActionButton(
+                                    onClick = { navController.navigate(CreateTask) },
+                                    modifier = Modifier.padding(32.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Add,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        ) { innerPadding ->
+                            TodoListApp(
+                                modifier = Modifier.padding(innerPadding),
+                                tasks = tasks,
+                            )
+                        }
+                    }
+
+                    composable<CreateTask> {
+                        Scaffold(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            topBar = {
+                                TopBar(
+                                    title = "Add task",
+                                    backButton = true,
+                                    navController = navController
+                                )
+                            }
+                        ) { innerPadding ->
+                            Form(
+                                taskInput = todo,
+                                changeInput = { todo = it },
+                                changeTasks = { tasks = tasks + it },
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -78,10 +131,7 @@ class MainActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TodoListApp(modifier: Modifier = Modifier) {
-    var todo by remember { mutableStateOf("") }
-    var tasks by remember { mutableStateOf(listOf<Task>()) }
-
+fun TodoListApp(modifier: Modifier = Modifier, tasks: List<Task>) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
 
@@ -91,11 +141,15 @@ fun TodoListApp(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Form(taskInput = todo, changeInput = { todo = it }, changeTasks = { tasks = tasks + it })
-
-        HorizontalDivider()
-
-        TasksList(tasks)
+        if (tasks.isNotEmpty()) {
+            TasksList(tasks)
+        } else {
+            Text(
+                text = "No tasks Yet!",
+                fontSize = 24.sp,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
@@ -108,8 +162,13 @@ fun Title() {
 }
 
 @Composable
-fun Form(taskInput: String, changeInput: (String) -> Unit, changeTasks: (Task) -> Unit) {
-    Column {
+fun Form(
+    taskInput: String,
+    changeInput: (String) -> Unit,
+    changeTasks: (Task) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier) {
         Title()
 
         Row(
@@ -156,63 +215,60 @@ fun TaskCompose(task: Task) {
     var isDone by remember { mutableStateOf(task.isDone) }
     var isOpen by remember { mutableStateOf(false) }
 
-    Column(
-        Modifier.border(
-            BorderStroke(2.dp, color = Color.Black),
-            shape = MaterialTheme.shapes.small
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+    Card {
+        Column {
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Checkbox(
-                    onCheckedChange = {
-                        isDone = it
-                        task.toggleIsDone()
-                    },
-                    checked = isDone,
-                )
-
-                Text(
-                    task.title,
-                    fontSize = 20.sp
-                )
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(task.createdAt.format(DateTimeFormatter.ofPattern("dd/MM")))
-                IconButton(
-                    onClick = {
-                        isOpen = !isOpen
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (task.description != "") {
-                        Icon(
-                            Icons.Rounded.KeyboardArrowDown,
-                            contentDescription = null,
-                            modifier = if (isOpen) {
-                                Modifier.rotate(180F)
-                            } else {
-                                Modifier
-                            }
-                        )
+                    Checkbox(
+                        onCheckedChange = {
+                            isDone = it
+                            task.toggleIsDone()
+                        },
+                        checked = isDone,
+                    )
+
+                    Text(
+                        task.title,
+                        fontSize = 20.sp
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(task.createdAt.format(DateTimeFormatter.ofPattern("dd/MM")))
+                    IconButton(
+                        onClick = {
+                            isOpen = !isOpen
+                        }
+                    ) {
+                        if (task.description != "") {
+                            Icon(
+                                Icons.Rounded.KeyboardArrowDown,
+                                contentDescription = null,
+                                modifier = if (isOpen) {
+                                    Modifier.rotate(180F)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        if (isOpen) {
-            Text(
-                task.description,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
-            )
+            if (isOpen) {
+                Text(
+                    task.description,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                )
+            }
         }
     }
 }
@@ -223,7 +279,8 @@ fun TasksList(tasks: List<Task>) {
     LazyColumn(
         modifier = Modifier
             .padding(vertical = 16.dp)
-            .fillMaxWidth()
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(tasks) { task ->
             TaskCompose(task)
@@ -256,14 +313,55 @@ fun Input(
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-//@Preview(showBackground = true, device = Devices.PIXEL, showSystemUi = true)
 @Composable
-fun AppPreview() {
-    TodoListTheme {
-        TodoListApp()
+fun TopBar(title: String, navController: NavController? = null, backButton: Boolean = false) {
+    Column(modifier = Modifier.padding(top = 16.dp)) {
+        Row(
+            horizontalArrangement =
+            if (backButton)
+                Arrangement.SpaceBetween
+            else
+                Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth()
+                .height(48.dp)
+        ) {
+            if (backButton)
+                IconButton(
+                    onClick = { navController?.popBackStack() },
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = null
+                    )
+                }
+
+            Text(
+                text = title,
+                fontSize = 24.sp,
+            )
+
+            if (backButton)
+                Text(
+                    text = "",
+                    modifier = Modifier.size(48.dp)
+                )
+        }
+        HorizontalDivider()
     }
 }
+
+
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Preview(showBackground = true, device = Devices.PIXEL, showSystemUi = true)
+//@Composable
+//fun AppPreview() {
+//    TodoListTheme {
+//        TodoListApp()
+//    }
+//}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
@@ -271,3 +369,9 @@ fun AppPreview() {
 fun TaskComposePreview() {
     TaskCompose(Task("test"))
 }
+
+@Serializable
+object Home
+
+@Serializable
+object CreateTask
