@@ -67,7 +67,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             TodoListTheme {
                 val navController = rememberNavController()
-                var todo by remember { mutableStateOf("") }
                 var tasks by remember { mutableStateOf(listOf<Task>()) }
 
                 NavHost(
@@ -96,7 +95,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { innerPadding ->
-                            TodoListApp(
+                            HomeRoute (
                                 modifier = Modifier.padding(innerPadding),
                                 tasks = tasks,
                             )
@@ -115,9 +114,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         ) { innerPadding ->
-                            Form(
-                                taskInput = todo,
-                                changeInput = { todo = it },
+                            CreateTaskRoute(
                                 changeTasks = { tasks = tasks + it },
                                 modifier = Modifier.padding(innerPadding)
                             )
@@ -131,7 +128,7 @@ class MainActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TodoListApp(modifier: Modifier = Modifier, tasks: List<Task>) {
+fun HomeRoute(modifier: Modifier = Modifier, tasks: List<Task>) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
 
@@ -150,6 +147,19 @@ fun TodoListApp(modifier: Modifier = Modifier, tasks: List<Task>) {
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+@Composable
+fun CreateTaskRoute(changeTasks: (Task) -> Unit, modifier: Modifier = Modifier) {
+    var todo by remember { mutableStateOf("") }
+
+    Column(modifier = modifier.padding(16.dp)) {
+        Form(
+            changeTasks = changeTasks,
+            taskInput = todo,
+            changeInput = { todo = it },
+        )
     }
 }
 
