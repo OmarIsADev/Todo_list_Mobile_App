@@ -51,6 +51,7 @@ fun HomeRoute(tasks: List<Task>, navController: NavController) {
         Home (
             modifier = Modifier.padding(innerPadding),
             tasks = tasks,
+            navController = navController
         )
     }
 }
@@ -58,7 +59,7 @@ fun HomeRoute(tasks: List<Task>, navController: NavController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Home(modifier: Modifier = Modifier, tasks: List<Task>) {
+fun Home(modifier: Modifier = Modifier, tasks: List<Task>, navController: NavController) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
 
@@ -69,7 +70,7 @@ fun Home(modifier: Modifier = Modifier, tasks: List<Task>) {
             .padding(16.dp)
     ) {
         if (tasks.isNotEmpty()) {
-            TasksList(tasks)
+            TasksList(tasks = tasks, navController = navController)
         } else {
             Text(
                 text = "No tasks Yet!",

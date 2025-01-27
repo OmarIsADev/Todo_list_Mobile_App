@@ -26,11 +26,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class Task(val title: String, val description: String = "") {
+@Serializable
+class Task(val title: String, val description: String = "", val category: String = "Blat") {
     @RequiresApi(Build.VERSION_CODES.O)
+    @Contextual
     val createdAt: LocalDate = LocalDate.now()
     var isDone: Boolean = false
 
@@ -41,11 +48,11 @@ class Task(val title: String, val description: String = "") {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TaskCompose(task: Task) {
+fun TaskCompose(task: Task, navController: NavController) {
     var isDone by remember { mutableStateOf(task.isDone) }
     var isOpen by remember { mutableStateOf(false) }
 
-    Card {
+    Card(onClick = { navController.navigate(TaskPage(Json.encodeToString(task))) }) {
         Column {
             Row(
                 modifier = Modifier
@@ -105,7 +112,7 @@ fun TaskCompose(task: Task) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TasksList(tasks: List<Task>) {
+fun TasksList(tasks: List<Task>, navController: NavController) {
     LazyColumn(
         modifier = Modifier
             .padding(vertical = 16.dp)
@@ -113,7 +120,7 @@ fun TasksList(tasks: List<Task>) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(tasks) { task ->
-            TaskCompose(task)
+            TaskCompose(task, navController = navController)
         }
     }
 }
