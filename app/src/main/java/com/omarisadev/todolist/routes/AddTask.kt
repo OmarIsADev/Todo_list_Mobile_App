@@ -3,7 +3,6 @@ package com.omarisadev.todolist.routes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,45 +48,54 @@ fun AddTaskRoute(navController: NavController, changeTasks: (Task) -> Unit) {
 
 @Composable
 fun AddTask(changeTasks: (Task) -> Unit, modifier: Modifier = Modifier) {
-    var todo by remember { mutableStateOf("") }
-
     Column(modifier = modifier.padding(16.dp)) {
         Form(
             changeTasks = changeTasks,
-            taskInput = todo,
-            changeInput = { todo = it },
         )
     }
 }
 
 @Composable
 fun Form(
-    taskInput: String,
-    changeInput: (String) -> Unit,
     changeTasks: (Task) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+
     Column(modifier) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Input(label = "Task", value = taskInput, changeInput, changeTasks)
+            Input(label = "Title", value = title, changeInput = { title = it })
+            Input(
+                label = "Description",
+                value = description,
+                changeInput = { description = it },
+                isLast = true
+            )
 
             ElevatedButton(
                 onClick = {
-                    if (taskInput.isNotEmpty()) {
-                        changeTasks(Task(taskInput))
+                    if (title.isNotEmpty()) {
+                        changeTasks(
+                            Task(
+                                title = title,
+                                description = description,
+                            )
+                        )
                     }
-                    changeInput("")
+                    title = ""
+                    description = ""
                 },
                 shape = RoundedCornerShape(6.dp),
                 contentPadding = PaddingValues(10.dp),
                 modifier = Modifier
                     .height(56.dp)
-                    .align(Alignment.Bottom)
                     .padding(bottom = 2.dp)
+                    .fillMaxWidth()
             ) {
                 Text("Add Task", textAlign = TextAlign.Center)
             }
